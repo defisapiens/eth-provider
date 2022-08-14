@@ -1,5 +1,7 @@
 const EventEmitter = require('events')
 const parse = require('../parse')
+const { SocksProxyAgent } = require('socks-proxy-agent')
+
 const dev = process.env.NODE_ENV === 'development'
 
 let WebSocket
@@ -15,7 +17,11 @@ class WebSocketConnection extends EventEmitter {
   create (url, options) {
     if (!WebSocket) return this.onError(new Error('No WebSocket transport available'))
     try {
-      this.socket = new WebSocket(url, [], { origin: options.origin })
+      if (!this.isLocal && process.env.SOCKS_PROXY) {
+        const proxyUrl = process.env.SOCKS_PROXY.startsWith('socks://') || process.env.SOCKS_PROXY.startsWith('socks5://') ? process.env.SOCKS_PROXY : 'socks://127.0.0.1:9050'
+        const agent = new SocksProxyAgent(proxyUrl)
+        this.socket = new WebSocket(url, [], { origin: options.origin, agent })
+      } else { this.socket = new WebSocket(url, [], { origin: options.origin }) }
     } catch (e) {
       return this.onError(e)
     }

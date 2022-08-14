@@ -1,5 +1,6 @@
 const EventEmitter = require('events')
 const { v4: uuid } = require('uuid')
+const { SocksProxyAgent } = require('socks-proxy-agent')
 
 const dev = process.env.NODE_ENV === 'development'
 
@@ -17,6 +18,7 @@ class HTTPConnection extends EventEmitter {
     this.pollId = uuid()
     setTimeout(() => this.create(), 0)
     this._emit = (...args) => !this.closed ? this.emit(...args) : null
+    this.isLocal = url.includes('localhost') || url.includes('127.0.0.1')
   }
 
   onError (err) {
@@ -30,6 +32,12 @@ class HTTPConnection extends EventEmitter {
   }
 
   init () {
+    if (!this.isLocal && process.env.SOCKS_PROXY) {
+      const proxyUrl = process.env.SOCKS_PROXY.startsWith('socks://') || process.env.SOCKS_PROXY.startsWith('socks5://') ? process.env.SOCKS_PROXY : 'socks://127.0.0.1:9050'
+      const httpAgent = new SocksProxyAgent(proxyUrl)
+      const httpsAgent = new SocksProxyAgent(proxyUrl)
+      XHR.nodejsSet({ httpAgent, httpsAgent })
+    }
     this.send({ jsonrpc: '2.0', method: 'net_version', params: [], id: 1 }, (err, response) => {
       if (err) return this.onError(err)
       this.connected = true

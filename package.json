@@ -28,6 +28,7 @@
     "ethereum-provider": "0.6.0",
     "events": "3.3.0",
     "oboe": "2.1.5",
+    "socks-proxy-agent": "^7.0.0",
     "uuid": "8.3.2",
     "ws": "8.7.0",
     "xhr2-cookies": "1.1.0"
